@@ -1,1 +1,33 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.10.13","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"gpu","dataSources":[{"sourceId":8768319,"sourceType":"datasetVersion","datasetId":5268952}],"dockerImageVersionId":30732,"isInternetEnabled":true,"language":"python","sourceType":"script","isGpuEnabled":true}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"code","source":"import numpy as np # linear algebra\nimport pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\nimport os\nimport streamlit as st\nimport joblib\n\n# List input data files\nfor dirname, _, filenames in os.walk('/kaggle/input'):\n    for filename in filenames:\n        print(os.path.join(dirname, filename))\n\n# Load model and tokenizer\nmodel = joblib.load('/kaggle/input/model-and-tokeniser/sentiment_model (1).pkl')\nvectorizer = joblib.load('/kaggle/input/model-and-tokeniser/tokenizer (1).pkl')\n\n# Function to predict sentiment\ndef predict_sentiment(text):\n    text_vector = vectorizer.transform([text])\n    prediction = model.predict(text_vector)\n    return prediction[0]\n\n# Streamlit app\nst.title(\"Twitter Sentiment Analysis\")\nst.write(\"Enter the text you want to analyse:\")\n\nuser_input = st.text_area(\"\")\n\nif st.button(\"Analyze\"):\n    if user_input:\n        sentiment = predict_sentiment(user_input)\n        st.write(f\"Sentiment: {sentiment}\")\n    else:\n        st.write(\"Please enter some text for analysis\")\n\n","metadata":{"_uuid":"10bc916c-9d09-45b1-927c-f8de9b5219bd","_cell_guid":"2fa7b4b7-d867-4015-87a2-3223ce2be9b3","collapsed":false,"jupyter":{"outputs_hidden":false},"trusted":true},"execution_count":null,"outputs":[]}]}
+import numpy as np
+import pandas as pd
+import os
+import streamlit as st
+import joblib
+
+# List input data files
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# Load model and tokenizer
+model = joblib.load('/kaggle/input/model-and-tokeniser/sentiment_model (1).pkl')
+vectorizer = joblib.load('/kaggle/input/model-and-tokeniser/tokenizer (1).pkl')
+
+# Function to predict sentiment
+def predict_sentiment(text):
+    text_vector = vectorizer.transform([text])
+    prediction = model.predict(text_vector)
+    return prediction[0]
+
+# Streamlit app
+st.title("Twitter Sentiment Analysis")
+st.write("Enter the text you want to analyse:")
+
+user_input = st.text_area("")
+
+if st.button("Analyze"):
+    if user_input:
+        sentiment = predict_sentiment(user_input)
+        st.write(f"Sentiment: {sentiment}")
+    else:
+        st.write("Please enter some text for analysis")
