@@ -4,14 +4,17 @@ import os
 import streamlit as st
 import joblib
 
-# List input data files
-for dirname, _, filenames in os.walk('/kaggle/input'):
+# List input data files (optional for debugging purposes)
+for dirname, _, filenames in os.walk('/app/twitter_sentiment_analysis/models'):
     for filename in filenames:
         print(os.path.join(dirname, filename))
 
 # Load model and tokenizer
-model = joblib.load('/kaggle/input/model-and-tokeniser/sentiment_model (1).pkl')
-vectorizer = joblib.load('/kaggle/input/model-and-tokeniser/tokenizer (1).pkl')
+model_path = os.path.join(os.path.dirname(__file__), 'models', 'sentiment_model.pkl')
+vectorizer_path = os.path.join(os.path.dirname(__file__), 'models', 'tokenizer.pkl')
+
+model = joblib.load(model_path)
+vectorizer = joblib.load(vectorizer_path)
 
 # Function to predict sentiment
 def predict_sentiment(text):
@@ -31,3 +34,4 @@ if st.button("Analyze"):
         st.write(f"Sentiment: {sentiment}")
     else:
         st.write("Please enter some text for analysis")
+
