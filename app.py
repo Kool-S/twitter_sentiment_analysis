@@ -1,37 +1,46 @@
-import numpy as np
-import pandas as pd
 import os
-import streamlit as st
+import gdown
 import joblib
+import streamlit as st
 
-# List input data files (optional for debugging purposes)
-for dirname, _, filenames in os.walk('/app/twitter_sentiment_analysis/models'):
-    for filename in filenames:
-        print(os.path.join(dirname, filename))
+# URLs to your Google Drive hosted files
+model_url = 'https://drive.google.com/file/d/1oxwbmuuuMpwNOP8E8y9oppGJHqMtNY8q/view?usp=drive_link'
+tokenizer_url = 'https://drive.google.com/file/d/15EVgcq5NLzYzkWLVLhFaVf_n2ZVtNsd8/view?usp=drive_link'
 
-# Load model and tokenizer
-model_path = os.path.join(os.path.dirname(__file__), 'models', 'sentiment_model.pkl')
-vectorizer_path = os.path.join(os.path.dirname(__file__), 'models', 'tokenizer.pkl')
+# Function to download files if not already downloaded
+def download_files():
+    if not os.path.exists('sentiment_model.pkl'):
+        gdown.download(model_url, 'sentiment_model.pkl', quiet=False)
+    if not os.path.exists('tokenizer.pkl'):
+        gdown.download(tokenizer_url, 'tokenizer.pkl', quiet=False)
 
-model = joblib.load(model_path)
-vectorizer = joblib.load(vectorizer_path)
+# Load model and tokenizer function
+@st.cache(allow_output_mutation=True)
+def load_model_and_tokenizer():
+    # Download files if not already downloaded
+    download_files()
+    
+    # Load the model and tokenizer using joblib (or appropriate method)
+    model = joblib.load('sentiment_model.pkl')
+    tokenizer = joblib.load('tokenizer.pkl')
+    return model, tokenizer
 
-# Function to predict sentiment
-def predict_sentiment(text):
-    text_vector = vectorizer.transform([text])
-    prediction = model.predict(text_vector)
-    return prediction[0]
+# Main Streamlit app code
+def main():
+    st.title('Twitter Sentiment Analysis')
+    
+    # Load the model and tokenizer
+    model, tokenizer = load_model_and_tokenizer()
+    
+    # Example sentiment analysis
+    text = st.text_input('Enter a tweet:')
+    if st.button('Predict Sentiment'):
+        # Replace with your actual sentiment analysis logic
+        # Example: tokenization and prediction
+        tokens = tokenizer.tokenize(text)
+        prediction = model.predict(tokens)
+        st.write(f"Sentiment prediction: {prediction}")
 
-# Streamlit app
-st.title("Twitter Sentiment Analysis")
-st.write("Enter the text you want to analyse:")
-
-user_input = st.text_area("")
-
-if st.button("Analyze"):
-    if user_input:
-        sentiment = predict_sentiment(user_input)
-        st.write(f"Sentiment: {sentiment}")
-    else:
-        st.write("Please enter some text for analysis")
+if __name__ == '__main__':
+    main()
 
