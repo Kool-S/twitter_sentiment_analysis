@@ -1,35 +1,41 @@
-import os
 import joblib
 import streamlit as st
+import tempfile
 
-# Paths to your locally stored model and tokenizer
-model_path = 'C:/Users/Shristi/Downloads/sentiment_model.pkl'
-tokenizer_path = 'C:/Users/Shristi/Downloads/tokenizer.pkl'
-
-# Function to load model and tokenizer
+# Function to load model and tokenizer from uploaded files
 @st.cache(allow_output_mutation=True)
-def load_model_and_tokenizer():
-    # Load the model and tokenizer using joblib
-    model = joblib.load(model_path)
-    tokenizer = joblib.load(tokenizer_path)
+def load_model_and_tokenizer(model_file, tokenizer_file):
+    model = joblib.load(model_file)
+    tokenizer = joblib.load(tokenizer_file)
     return model, tokenizer
 
 # Main Streamlit app code
 def main():
     st.title('Twitter Sentiment Analysis')
-    
-    # Load the model and tokenizer
-    model, tokenizer = load_model_and_tokenizer()
-    
-    # Example sentiment analysis
-    text = st.text_input('Enter a tweet:')
-    if st.button('Predict Sentiment'):
-        # Replace with your actual sentiment analysis logic
-        # Example: tokenization and prediction
-        tokens = tokenizer.tokenize(text)
-        prediction = model.predict([tokens])  # Make sure to pass the tokens in the correct format
-        st.write(f"Sentiment prediction: {prediction}")
+
+    model_file = st.file_uploader("Upload sentiment model (.pkl file)", type="pkl")
+    tokenizer_file = st.file_uploader("Upload tokenizer (.pkl file)", type="pkl")
+
+    if model_file and tokenizer_file:
+        # Create temporary files to save uploaded files
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_model_file:
+            tmp_model_file.write(model_file.read())
+            model_path = tmp_model_file.name
+
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_tokenizer_file:
+            tmp_tokenizer_file.write(tokenizer_file.read())
+            tokenizer_path = tmp_tokenizer_file.name
+
+        model, tokenizer = load_model_and_tokenizer(model_path, tokenizer_path)
+
+        text = st.text_input('Enter a tweet:')
+        if st.button('Predict Sentiment'):
+            # Example: tokenization and prediction
+            tokens = tokenizer.tokenize(text)
+            prediction = model.predict([tokens])  # Ensure the correct format
+            st.write(f"Sentiment prediction: {prediction}")
 
 if __name__ == '__main__':
     main()
+
 
