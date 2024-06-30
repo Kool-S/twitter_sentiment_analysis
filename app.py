@@ -1,41 +1,67 @@
-import joblib
 import streamlit as st
-import tempfile
+import torch
+import pickle
 
-# Function to load model and tokenizer from uploaded files
-@st.cache(allow_output_mutation=True)
-def load_model_and_tokenizer(model_file, tokenizer_file):
-    model = joblib.load(model_file)
-    tokenizer = joblib.load(tokenizer_file)
-    return model, tokenizer
+# Set page title
+st.set_page_config(page_title="Sentiment Analysis App")
 
-# Main Streamlit app code
-def main():
-    st.title('Twitter Sentiment Analysis')
+@st.cache_resource
+def load_model():
+    # Try loading from pickle
+    try:
+        with open('sentiment_model.pkl', 'rb') as f:
+            model = pickle.load(f)
+        model = model.to('cpu')
+    except FileNotFoundError:
+        st.error("Model file not found. Please ensure 'sentiment_model.pkl' is available.")
+        st.stop()
+    return model
 
-    model_file = st.file_uploader("Upload sentiment model (.pkl file)", type="pkl")
-    tokenizer_file = st.file_uploader("Upload tokenizer (.pkl file)", type="pkl")
+@st.cache_resource
+def load_tokenizer():
+    # Try loading from pickle
+    try:
+        with open('tokenizer.pkl', 'rb') as f:
+            tokenizer = pickle.load(f)
+    except FileNotFoundError:
+        st.error("Tokenizer file not found. Please ensure 'tokenizer.pkl' is available.")
+        st.stop()
+    return tokenizer
 
-    if model_file and tokenizer_file:
-        # Create temporary files to save uploaded files
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_model_file:
-            tmp_model_file.write(model_file.read())
-            model_path = tmp_model_file.name
+# Load model and tokenizer
+model = load_model()
+tokenizer = load_tokenizer()
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp_tokenizer_file:
-            tmp_tokenizer_file.write(tokenizer_file.read())
-            tokenizer_path = tmp_tokenizer_file.name
+def predict_sentiment(text):
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
+    prediction = torch.argmax(probabilities, dim=-1)
+    return "Positive" if prediction.item() == 1 else "Negative"
 
-        model, tokenizer = load_model_and_tokenizer(model_path, tokenizer_path)
+# Streamlit app
+st.title('Sentiment Analysis App')
 
-        text = st.text_input('Enter a tweet:')
-        if st.button('Predict Sentiment'):
-            # Example: tokenization and prediction
-            tokens = tokenizer.tokenize(text)
-            prediction = model.predict([tokens])  # Ensure the correct format
-            st.write(f"Sentiment prediction: {prediction}")
+user_input = st.text_area("Enter your text here:")
 
-if __name__ == '__main__':
-    main()
+if st.button('Predict Sentiment'):
+    if user_input:
+        with st.spinner('Analyzing sentiment...'):
+            result = predict_sentiment(user_input)
+        st.write(f"The sentiment of the text is: {result}")
+    else:
+        st.warning("Please enter some text for analysis.")
 
+# Add some information about the app
+st.markdown("""
+### About this app
+This app uses a pre-trained model to predict the sentiment of input text.
+The model classifies text as either positive or negative.
+
+### How to use
+1. Enter your text in the text area above.
+2. Click the 'Predict Sentiment' button.
+3. The app will display whether the sentiment is positive or negative.
+""")
 
